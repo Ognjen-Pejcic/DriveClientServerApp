@@ -3,6 +3,7 @@ package clienthandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -11,6 +12,10 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.LinkedList;
 
 import korisnici.Korisnik;
@@ -221,7 +226,7 @@ public class ClientHandler extends Thread {
         // for sub-directories 
         else if(arr[index].isDirectory()) 
         { 
-        	clientOutput.println("[" + arr[index].getName() + "]"); 
+        	clientOutput.println("Folder: " + arr[index].getName()); 
               
             // recursion for sub-directories 
             recursivePrint(arr[index].listFiles(), 0, level + 1); 
@@ -303,13 +308,32 @@ public class ClientHandler extends Thread {
 			clientOutput.println("Odabrani fajl ne postoji");
 		else {
 			if(file.isDirectory())clientOutput.println("Direktorijum je");			//listanjeDirektorijuma(username);
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			String tekst;
-			while((tekst =br.readLine())!=null) {
-				clientOutput.println(tekst);
+			else{
+				if(file.getName().endsWith(".txt")) {
+					BufferedReader br = new BufferedReader(new FileReader(file));
+					String tekst;
+					while((tekst =br.readLine())!=null) {
+						clientOutput.println(tekst);
+					}
+					br.close();	
+				}
+				else {
+					
+					
+					String nesto = null;
+					try {
+						FileInputStream fis = new FileInputStream(file);
+						byte[] b = new byte[(int) file.length()];
+						fis.read(b);
+						nesto = new String(Base64.getEncoder().encode(b),"UTF-8");
+						clientOutput.println(nesto);
+					}catch(FileNotFoundException e) {
+						e.printStackTrace();
+					}
+					
+				}
 			}
-			br.close();
-		}
+			}
 	}
 	@Override
 	public void run() {
@@ -334,8 +358,9 @@ public class ClientHandler extends Thread {
 			else if(opcijaint==2) {
 				
 				String korisnik=login();
+				int opcija2=0;
 				do {
-				int opcija2=meniKorisnika(korisnik);
+				opcija2=meniKorisnika(korisnik);
 				if(opcija2==1)listanje(korisnik);
 				else if(opcija2==2) {
 					clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
@@ -351,7 +376,7 @@ public class ClientHandler extends Thread {
 					
 				};
 			
-			}while(opcijaint!=0);
+			}while(opcija2!=0);
 			}else {
 				
 			}
