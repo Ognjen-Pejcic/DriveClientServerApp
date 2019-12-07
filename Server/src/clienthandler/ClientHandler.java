@@ -3,6 +3,7 @@ package clienthandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -11,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Base64;
 import java.util.LinkedList;
 
 import korisnici.Korisnik;
@@ -231,8 +233,10 @@ public class ClientHandler extends Thread {
         recursivePrint(arr,++index, level); 
    } 
 	public File vratiFajlRekurzivno(File[] arr, int index, String nazivFajla) {
-		if(index==arr.length)
+		if(index==arr.length) {
+			
 			return null;
+			}
 		if(arr[index].isFile()) {
 			if(arr[index].getName().equals(nazivFajla)) {
 				return arr[index];
@@ -248,6 +252,22 @@ public class ClientHandler extends Thread {
 		File folder = new File(putanja);
 		File[] listaFoldera = folder.listFiles();
 		recursivePrint(listaFoldera, 0, 0);
+	}
+	
+	public File searchFile(File file, String search) {
+	    if (file.isDirectory()) {
+	        File[] arr = file.listFiles();
+	        for (File f : arr) {
+	            File found = searchFile(f, search);
+	            if (found != null)
+	                return found;
+	        }
+	    } else {
+	        if (file.getName().equals(search)) {
+	            return file;
+	        }
+	    }
+	    return null;
 	}
 	public void listanjeDirektorijuma(String username) {
 		try {
@@ -302,13 +322,29 @@ public class ClientHandler extends Thread {
 		if(file==null)
 			clientOutput.println("Odabrani fajl ne postoji");
 		else {
-			if(file.isDirectory())clientOutput.println("Direktorijum je");			//listanjeDirektorijuma(username);
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			String tekst;
-			while((tekst =br.readLine())!=null) {
-				clientOutput.println(tekst);
+			if (file.isDirectory()) {
+				clientOutput.println("Direktorijum je");
+			} else {
+				if (file.getName().endsWith(".txt")) {
+					BufferedReader br = new BufferedReader(new FileReader(file));
+					String tekst;
+					while ((tekst = br.readLine()) != null) {
+						clientOutput.println(tekst);
+					}
+					br.close();
+				} else {
+					String nesto = null;
+					try {
+						FileInputStream fis = new FileInputStream(file);
+						byte[] b = new byte[(int) file.length()];
+						fis.read(b);
+						nesto = new String(Base64.getEncoder().encode(b), "UTF-8");
+						clientOutput.println(nesto);
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					}
+				}
 			}
-			br.close();
 		}
 	}
 	@Override
@@ -344,7 +380,7 @@ public class ClientHandler extends Thread {
 					putanja=putanja.concat("\\korisnici\\").concat(username);
 					File folder = new File(putanja);
 					File[] listaFoldera = folder.listFiles();
-					File file = vratiFajlRekurzivno(listaFoldera, 0, naziv);
+					File file = searchFile(new File(putanja), naziv);
 					
 				//	File file= vratiFajl(korisnik, naziv);
 					otvoriFajl(file);
