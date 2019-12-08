@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -347,6 +348,21 @@ public class ClientHandler extends Thread {
 			}
 		}
 	}
+	
+	public void upload(File file, String username) throws IOException {
+		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+		clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
+		FileInputStream fis = new FileInputStream(file);
+		otvoriFajl(file);
+		byte b[] = new byte [(int) file.length()];
+		fis.read(b,0,b.length);
+		String  s= file.getName();
+		String putanja =  new File("").getAbsolutePath();
+		putanja=putanja.concat("\\korisnici\\"+username+"\\"+s);
+		File novifajl= new File(putanja);
+		FileOutputStream fos =  new FileOutputStream(novifajl);
+		fos.write(b, 0, b.length);
+	}
 	@Override
 	public void run() {
 		
@@ -385,7 +401,11 @@ public class ClientHandler extends Thread {
 				//	File file= vratiFajl(korisnik, naziv);
 					otvoriFajl(file);
 					
-				};
+				}else if(opcija2==3) {
+					clientOutput.println("Unesite putanju do datoteke: ");
+					String putanja = clientInput.readLine();
+					upload(new File(putanja),username);
+				}
 			
 			}while(opcijaint!=0);
 			}else {
