@@ -1,7 +1,6 @@
 package clienthandler;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,7 +28,7 @@ public class ClientHandler extends Thread {
 	String status;
 	String password;
 	String opcija;
-	boolean premium;
+	String premium;
 	LinkedList<Korisnik> korisnici = new LinkedList<>();
 
 	// konstruktor
@@ -53,8 +52,6 @@ public class ClientHandler extends Thread {
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
 
 			boolean validan = false;
-
-			// login meni
 			do {
 				try {
 					clientOutput.println(
@@ -71,9 +68,9 @@ public class ClientHandler extends Thread {
 			} while (validan != true);
 			return opcijaint;
 		} catch (IOException e) {
-			return opcijaint;
+			
 		}
-
+		return 0;
 	}
 
 	public int meniKorisnika(String username) {
@@ -81,7 +78,7 @@ public class ClientHandler extends Thread {
 		try {
 			clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
-			clientOutput.println("Dobrodosli " + username);
+//			clientOutput.println("Dobrodosli " + username);
 			boolean validan = false;
 
 			// login meni
@@ -89,7 +86,7 @@ public class ClientHandler extends Thread {
 				try {
 					clientOutput
 							.println("Odaberite: \n1. Prikaz liste datotkea\n2. Otvaranje datoteke\n3. Upload daoteke"
-									+ "\n4. Dodolite pristup korisniku\n5. Generisanje link za deljenje\n6.Pregled podeljenih direktorijuma\n7. Upravljanje folderima\n0. Logout");
+									+ "\n4. Dodolite pristup korisniku\n5. Generisanje link za deljenje\n6. Pregled podeljenih direktorijuma\n7. Upravljanje folderima\n0. Logout");
 					opcija = clientInput.readLine();
 					opcijaint = Integer.parseInt(opcija);
 					if (opcijaint == 1 || opcijaint == 2 || opcijaint == 0 || opcijaint == 3 || opcijaint == 4
@@ -111,28 +108,37 @@ public class ClientHandler extends Thread {
 		try {
 			clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
-			FileReader fr = new FileReader("korisnici.txt");
-			BufferedReader citanjeIzFajla = new BufferedReader(fr);
+			
 
-			int a = 1;
-			int b = 0;
+//			int a = 1;
+//			int b = 0;
 			boolean validan = false;
 			do {
+				FileReader fr = new FileReader("korisnici.txt");
+				BufferedReader citanjeIzFajla = new BufferedReader(fr);
 				clientOutput.println("Unesi username: ");
 				username = clientInput.readLine();
 				String red;
 				while ((red = citanjeIzFajla.readLine()) != null) {
 					String[] tekst = red.split("_");
 					if (tekst[0].equals(username)) {
-						clientOutput.println("Unesi password: ");
+						do{
+							clientOutput.println("Unesi password: ");
 						String passwordProvera = clientInput.readLine();
 						if (passwordProvera.equals(tekst[1])) {
 							validan = true;
+							premium=tekst[2];
 						}
-
+						else {
+							clientOutput.println("Pogresan password");
+						}
+						}while(validan!=true);
 					}
 					if (validan == true)
 						break;
+//					else {
+//						clientOutput.println("Uneti username ne postoji!");
+//					}
 //					if(a%3==1 && red.equals(username)) {
 //						b=1;
 //						password=citanjeIzFajla.readLine();
@@ -143,11 +149,14 @@ public class ClientHandler extends Thread {
 //								validan=true;
 //							}
 				}
+					if(validan==false)
+					clientOutput.println("Uneti username ne postoji!");
+					citanjeIzFajla.close();
 			} while (validan != true);
 
 			if (validan == false)
 				clientOutput.println("Username ne postoji!");
-			citanjeIzFajla.close();
+			
 
 			return username;
 		} catch (IOException e) {
@@ -158,21 +167,26 @@ public class ClientHandler extends Thread {
 
 	public void registracija() {
 		boolean validan = false;
-		// int opcijaint=0;
+		
 		try {
 			PrintWriter upisUfajl = new PrintWriter(new FileWriter("korisnici.txt", true));
 			FileReader fr = new FileReader("korisnici.txt");
 			BufferedReader citanjeIzFajla = new BufferedReader(fr);
 			clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+			LinkedList<String> korisnici=generisiKorisnike();
 			
-			validan = true;
-			int a = 1;
+//			int a = 1;
 
-			// do {
+			 do {
+				 validan = true;
 			clientOutput.println("Unesi username: ");
 			username = clientInput.readLine();
-			String red;
+//			String red;
+			for (String korisnik : korisnici) {
+				if(korisnik.split("_")[0].equals(username))
+					validan=false;
+			}
 //			while((red=citanjeIzFajla.readLine())!=null) {
 //				validan=true;
 //				if(a%3==1 && red.equals(username)) {
@@ -182,33 +196,32 @@ public class ClientHandler extends Thread {
 //				}
 //				a++;
 //			}
-//			
-//			}while(validan!=true);
+			if(validan==false)
+			clientOutput.println("Uneto korisnicko ime vec postoji");
+			}while(validan!=true);
 //			upisUfajl.println(username);
 			// upisUfajl.flush();
 			clientOutput.println("Unesi zeljeni password: ");
 			password = clientInput.readLine();
 //			upisUfajl.println(password);
 			validan = false;
-			String premium;
-//			do{
-//				clientOutput.println("Da li zelite da budete premium korisnik?(Unesite da/ne)");
-//				 tekst = clientInput.readLine();
-//				if(tekst.equals("da")) {
-//					premium=true;
-//					validan=true;
-//					}
-//				else if(tekst.equals("ne")) {
-//					premium=false;
-//					validan=true;
-//				}
-//				else
-//					clientOutput.println("Pogresan unos");
-//			}while(validan!=true);
+			
+			do{
+				clientOutput.println("Da li zelite da budete premium korisnik?(Unesite da/ne)");
+				 premium = clientInput.readLine();
+				if(premium.equals("da")) {
+					validan=true;
+					}
+				else if(premium.equals("ne")) {
+					validan=true;
+				}
+				else
+					clientOutput.println("Pogresan unos");
+			}while(validan!=true);
 //			upisUfajl.println(tekst);
 			// korisnici.add(new Korisnik(username, premium));
-			clientOutput.println("Da li zelite da budete premium korisnik?(Unesite da/ne)");
-			premium = clientInput.readLine();
+//			clientOutput.println("Da li zelite da budete premium korisnik?(Unesite da/ne)");
+//			premium = clientInput.readLine();
 			napraviDirektorijum(username);
 			String link = new File("").getAbsolutePath().concat("\\korisnici\\" + username);
 			String tekst = username + "_" + password + "_" + premium + "_" + link + "_";
@@ -223,113 +236,113 @@ public class ClientHandler extends Thread {
 
 	}
 
-	public String procitajRegistrovane() {
-		String registrovani = "";
-		try {
-			BufferedReader bReader = new BufferedReader(new FileReader("registrovani.txt"));
-			boolean kraj = false;
+//	public String procitajRegistrovane() {
+//		String registrovani = "";
+//		try {
+//			BufferedReader bReader = new BufferedReader(new FileReader("registrovani.txt"));
+//			boolean kraj = false;
+//
+//			while (kraj == false) {
+//				String pom = bReader.readLine();
+//				if (pom == null) {
+//					kraj = true;
+//				} else {
+//					registrovani = registrovani + pom + "\n";
+//				}
+//			}
+//			bReader.close();
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		return registrovani;
+//	}
 
-			while (kraj == false) {
-				String pom = bReader.readLine();
-				if (pom == null) {
-					kraj = true;
-				} else {
-					registrovani = registrovani + pom + "\n";
-				}
-			}
-			bReader.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return registrovani;
-	}
+//	private void registracija2() throws IOException {
+//		clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
+//		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+//		String registrovani = procitajRegistrovane();
+//		try {
+//
+//			boolean validnoIme = false;
+//			while (validnoIme == false) {
+//				clientOutput.println("Unesite korisnicko ime.");
+//
+//				String ime = clientInput.readLine();
+//
+//				if (ime.startsWith("menu")) {
+//					return;
+//				}
+//				boolean jedinstvenoIme = false;
+//				if (registrovani == "") {
+//					jedinstvenoIme = true;
+//				} else {
+//					jedinstvenoIme = daLiJeJedinstveno(ime);
+//				}
+//
+//				if (jedinstvenoIme == false) {
+//					clientOutput.println("Korisnicko ime nije jedinstveno");
+//				} else {
+//					this.username = ime;
+//					String usernameForClient = "" + this.username + "";
+//					this.clientOutput.println(usernameForClient);
+//					validnoIme = true;
+//				}
+//			}
+//
+//			clientOutput.println("Unesite sifru.");
+//			String sifra = clientInput.readLine();
+//			if (sifra.startsWith("menu")) {
+//				return;
+//			}
+//			this.password = sifra;
+//
+//			while (true) {
+//				clientOutput.println("Za status obicnog korisnika unesite 1, a za status premium korisnika unesite 2");
+//				String unos = clientInput.readLine();
+//				if (unos.equals("1")) {
+//					this.status = "obican";
+//					break;
+//				} else if (unos.equals("2")) {
+//					this.status = "premium";
+//					break;
+//				} else {
+//					clientOutput.println("***Neprihvatljiv unos");
+//				}
+//			}
+//
+//			clientOutput.println(username + " _ " + password + " _ " + status + " _ " + " _ " + "\n");
+//			clientOutput.flush();
+//			clientOutput.close();
+//			clientOutput.println("Uspjesno ste se registrovali");
+//			napraviDirektorijum(this.username);
+//		} catch (IOException e) {
+//			System.out.println("Doslo je do greske");
+//		}
+//	}
 
-	private void registracija2() throws IOException {
-		clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
-		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
-		String registrovani = procitajRegistrovane();
-		try {
-
-			boolean validnoIme = false;
-			while (validnoIme == false) {
-				clientOutput.println("Unesite korisnicko ime.");
-
-				String ime = clientInput.readLine();
-
-				if (ime.startsWith("menu")) {
-					return;
-				}
-				boolean jedinstvenoIme = false;
-				if (registrovani == "") {
-					jedinstvenoIme = true;
-				} else {
-					jedinstvenoIme = daLiJeJedinstveno(ime);
-				}
-
-				if (jedinstvenoIme == false) {
-					clientOutput.println("Korisnicko ime nije jedinstveno");
-				} else {
-					this.username = ime;
-					String usernameForClient = "" + this.username + "";
-					this.clientOutput.println(usernameForClient);
-					validnoIme = true;
-				}
-			}
-
-			clientOutput.println("Unesite sifru.");
-			String sifra = clientInput.readLine();
-			if (sifra.startsWith("menu")) {
-				return;
-			}
-			this.password = sifra;
-
-			while (true) {
-				clientOutput.println("Za status obicnog korisnika unesite 1, a za status premium korisnika unesite 2");
-				String unos = clientInput.readLine();
-				if (unos.equals("1")) {
-					this.status = "obican";
-					break;
-				} else if (unos.equals("2")) {
-					this.status = "premium";
-					break;
-				} else {
-					clientOutput.println("***Neprihvatljiv unos");
-				}
-			}
-
-			clientOutput.println(username + " _ " + password + " _ " + status + " _ " + " _ " + "\n");
-			clientOutput.flush();
-			clientOutput.close();
-			clientOutput.println("Uspjesno ste se registrovali");
-			napraviDirektorijum(this.username);
-		} catch (IOException e) {
-			System.out.println("Doslo je do greske");
-		}
-	}
-
-	private boolean daLiJeJedinstveno(String ime) {
-		try {
-			BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("registrovani.txt")));
-			LinkedList<String> userInfos = new LinkedList<String>();
-			String info = "";
-			while ((info = bufferedReader.readLine()) != null) {
-				userInfos.add(info);
-			}
-
-			for (String userInfo : userInfos) {
-				if (ime.equals(userInfo.split(" : ")[0])) {
-					return false;
-				}
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException r) {
-			r.printStackTrace();
-		}
-		return true;
-	}
+//	private boolean daLiJeJedinstveno(String ime) {
+//		try {
+//			BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("registrovani.txt")));
+//			LinkedList<String> userInfos = new LinkedList<String>();
+//			String info = "";
+//			while ((info = bufferedReader.readLine()) != null) {
+//				userInfos.add(info);
+//			}
+//
+//			for (String userInfo : userInfos) {
+//				if (ime.equals(userInfo.split(" : ")[0])) {
+//					return false;
+//				}
+//			}
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		} catch (IOException r) {
+//			r.printStackTrace();
+//		}
+//		return true;
+//	}
 
 	public void recursivePrint(File[] arr, int index, int level) throws IOException {
 		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
@@ -468,10 +481,13 @@ public class ClientHandler extends Thread {
 						fis.read(b);
 						nesto = new String(Base64.getEncoder().encode(b), "UTF-8");
 						clientOutput.println(nesto);
+						fis.close();
 					} catch (FileNotFoundException e) {
 						e.printStackTrace();
 					}
+				
 				}
+				
 			}
 		}
 	}
@@ -490,6 +506,8 @@ public class ClientHandler extends Thread {
 		File novifajl = new File(putanja);
 		FileOutputStream fos = new FileOutputStream(novifajl);
 		fos.write(b, 0, b.length);
+		fis.close();
+		fos.close();
 	}
 
 	public LinkedList<String> generisiKorisnike() throws IOException {
@@ -501,11 +519,11 @@ public class ClientHandler extends Thread {
 		while ((red = citanjeIzFajla.readLine()) != null) {
 			korisnik.add(red);
 		}
+		citanjeIzFajla.close();
 		return korisnik;
 	}
 
 	private String pristupTudjemPrekoLinka(String link) throws IOException {
-		String vlasnik;
 		LinkedList<String> korisnici = generisiKorisnike();
 		for (String korisnik : korisnici) {
 			String[] delovi = korisnik.split("_");
@@ -524,10 +542,11 @@ public class ClientHandler extends Thread {
 			String[] delovi = korisnik.split("_");
 			if(delovi[0].equals(user)) {
 				clientOutput.println(delovi[3]);
+				citanjeIzFajla.close();
 				return;
 			}
 		}
-		
+		citanjeIzFajla.close();
 	}
 	
 	private void dajOvlascenjeKorisniku(String user) throws IOException {
@@ -547,6 +566,7 @@ public class ClientHandler extends Thread {
 			}
 			if(postoji==false) {
 			clientOutput.println("Korisnik ne postoji!");
+			citanjeIzFajla.close();
 			return;
 			}
 		
@@ -560,18 +580,35 @@ public class ClientHandler extends Thread {
 				PrintWriter upisUfajl = new PrintWriter(new FileWriter("korisnici.txt"));
 			 upisUfajl.write(inputBuffer.toString());
 		        upisUfajl.close();
+		        citanjeIzFajla.close();
 	}
 	private boolean imaPristup(String ovajCijiJefajl,String user) throws IOException {
 		LinkedList<String> korisnici = generisiKorisnike();
+		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+		
 		for (String korisnik : korisnici) {
-			String[] delovi=korisnik.split("_");
+			if(korisnik!=null) {
+				String[] delovi=korisnik.split("_");
+				if(delovi.length>=5) {
 			String imajuPristup=delovi[4];
-			if(ovajCijiJefajl.equals(delovi[0]) && imajuPristup.contains(user+" ")) {
-				return true;
+			if(imajuPristup!=null) {
+				if(ovajCijiJefajl.equals(delovi[0]) && imajuPristup.contains(user+" ")) 
+					return true;
+			}
+			}
 			}
 		}
 		return false;
 	}
+	private boolean daLiPostojiKorisnik(String user) throws IOException {
+		LinkedList<String> korisnici = generisiKorisnike();
+		for (String korisnik : korisnici) {
+			if(korisnik.split("_")[0].equals(user))
+				return true;
+		}
+		return false;
+	}
+
 	public File vratiFolder(String username, String nazivFajla) {
 		try {
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
@@ -608,8 +645,80 @@ public class ClientHandler extends Thread {
 		File novifajl = new File(putanja);
 		FileOutputStream fos = new FileOutputStream(novifajl);
 		fos.write(b, 0, b.length);
+		fis.close();
+		fos.close();
+	}
+	public void korisniciCijimDirektorijumimaImaPristup() throws IOException {
+		FileReader fr= new FileReader("korisnici.txt");
+		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+		BufferedReader citanjeIzFajla = new BufferedReader(fr);
+		LinkedList<String> korisnici= generisiKorisnike();
+		
+		for (String korisnik : korisnici) {
+			String[] delovi = korisnik.split("_");
+			if(delovi[0].equals(username)) {
+				String[] oniKojimaImaPristup = delovi[4].split(" ");
+				clientOutput.println("Imate pristup direktorijumima sledecih korisnika");
+				for (String oni : oniKojimaImaPristup) {
+					clientOutput.println(oni);
+				}
+			}
+				
+		}
+		citanjeIzFajla.close();
 	}
 	
+	private int meniUpravljanjaDatotekama() {
+		int opcijaint = 0;
+		try {
+			clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
+			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+
+			boolean validan = false;
+			do {
+				try {
+					clientOutput.println(
+							"Odaberite: \n1. Kreiraj folder\n2. Promeni naziv foldera\n3. Prebaci datoteku iz foldera u drugi folder\n4. Obrisi folder\n0. Izlaz");
+					opcija = clientInput.readLine();
+					opcijaint = Integer.parseInt(opcija);
+					if (opcijaint == 1 || opcijaint == 2 || opcijaint == 3|| opcijaint == 4 || opcijaint == 0) {
+						validan = true;
+					} else
+						clientOutput.println("Pogresan unos, taj broj ne postoji kao opcija");
+				} catch (NumberFormatException e) {
+					System.out.println("Pogresan unos, unesite broj!");
+				}
+			} while (validan != true);
+			return opcijaint;
+		} catch (IOException e) {
+			
+		}
+		return 0;
+	}
+	private void napraviDirektorijumNaOdredjenomMestu(String putanja, String nazivFajla) throws IOException {
+//		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+//		File folder =new File(putanja);
+//		if(folder.exists()) {
+			File noviFolder =  new File(putanja.concat("\\"+nazivFajla));
+			noviFolder.mkdir();
+		
+//		}else {
+//			clientOutput.println("Uneta je putanja koja ne postoji");
+//		}
+	}
+	private void izmeniIme(String putanja, String naziv) {
+		File folder =new File(putanja);
+		String[] rastavljenaPutanja = putanja.split("\\\\");
+		String novaPutanja="";
+		for (int i=0;i<rastavljenaPutanja.length-1;i++) {
+			novaPutanja=novaPutanja.concat(rastavljenaPutanja[i]+"\\");
+		}
+//		novaPutanja=novaPutanja.concat(naziv);
+//		File noviFolder =  new File(putanja.concat(novaPutanja));
+//		folder.renameTo(noviFolder);
+		 File newDir = new File(folder.getParent() + "\\" + naziv);
+				    folder.renameTo(newDir);
+	}
 	@Override
 	public void run() {
 
@@ -630,66 +739,137 @@ public class ClientHandler extends Thread {
 			} else if (opcijaint == 1) {// sign up
 				registracija();
 			} else if (opcijaint == 2) {
-
+				
 				String korisnik = login();
+				clientOutput.println("Dobrodosli " + username);
 				int opcija2;
-				do {
-					 opcija2 = meniKorisnika(korisnik);
-					if (opcija2 == 1)
-						listanje(korisnik);
-					else if (opcija2 == 2) {
-						clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
-						String naziv = clientInput.readLine();
-						String putanja = new File("").getAbsolutePath();
-						putanja = putanja.concat("\\korisnici\\").concat(username);
-						File folder = new File(putanja);
-						File[] listaFoldera = folder.listFiles();
-						File file = searchFile(new File(putanja), naziv);
-
-						// File file= vratiFajl(korisnik, naziv);
-						otvoriFajl(file);
-
-					} else if (opcija2 == 3) {
-						clientOutput.println("Unesite putanju do datoteke: ");
-						String putanja = clientInput.readLine();
-						upload(new File(putanja), username);
-					} else if(opcija2==4) {
-						clientOutput.println("Kome zelite da date pristup: ");
-						String user = clientInput.readLine();
-						dajOvlascenjeKorisniku(user);
-					}
-					else if (opcija2 == 5) {
-						generisLinkZaDeljenje(username);
-					
-					} else if(opcija2 ==6) {
-						clientOutput.println("Unesi naziv korisnika kojem zelis da pristupis: ");
-						String t= clientInput.readLine();
+				if(premium.equals("da")) {
+					do {
 						
-						if(imaPristup(t, username)) 
-						listanje(t);
+						 opcija2 = meniKorisnika(korisnik);
+						if (opcija2 == 1)
+							listanje(korisnik);
+						else if (opcija2 == 2) {
+							
+							clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+							String naziv = clientInput.readLine();
+							String putanja = new File("").getAbsolutePath();
+							putanja = putanja.concat("\\korisnici\\").concat(username);
+//							File folder = new File(putanja);
+//							File[] listaFoldera = folder.listFiles();
+							File file = searchFile(new File(putanja), naziv);
+							if(file.exists())
+							// File file= vratiFajl(korisnik, naziv);
+							otvoriFajl(file);
+							else
+								clientOutput.println("Uneti fajl ne postoji");
+
+						} else if (opcija2 == 3) {
+							clientOutput.println("Unesite putanju do datoteke: ");
+							String putanja = clientInput.readLine();
+							if(new File(putanja).exists())
+							upload(new File(putanja), username);
+							else 
+								clientOutput.println("Uneli ste pogresnu putanju");
+						} else if(opcija2==4) {
+							clientOutput.println("Kome zelite da date pristup: ");
+							String user = clientInput.readLine();
+							
+							dajOvlascenjeKorisniku(user);
+						}
+						else if (opcija2 == 5) {
+							generisLinkZaDeljenje(username);
 						
-					} else if(opcija2==7) {
-						clientOutput.println("Unesi naziv fajla koji zelis da premestis: ");
-						String naziv = clientInput.readLine();
-						String putanja = new File("").getAbsolutePath();
-						putanja = putanja.concat("\\korisnici\\").concat(username);
-						File folder = new File(putanja);
-						File[] listaFoldera = folder.listFiles();
-						File file = searchFile(new File(putanja), naziv);
-						clientOutput.println("Unesite naziv fajla gde zelis da se prebaci: ");
-						String nazivnovogfoldera = clientInput.readLine();
-						File novFolder = vratiFolder(username, nazivnovogfoldera);
-						String novaputanja = novFolder.getAbsolutePath();
-//						String novaputanja = new File("").getAbsolutePath().concat("\\korisnici\\liked\\a");
-						prebaci(file, novaputanja);
-						if(file.delete())clientOutput.println("Resio fajl");
-						else clientOutput.println("Nisam resio fajl");
-					}
-					else {
-						clientOutput.println("Nemate pristup!");
-					} 
+						} else if(opcija2 ==6) {
+							korisniciCijimDirektorijumimaImaPristup();
+							clientOutput.println("Unesi naziv korisnika kojem zelis da pristupis: ");
+							
+							String t= clientInput.readLine();
+							if(!daLiPostojiKorisnik(t)) {
+								clientOutput.println("Uneti korisnik ne postoji");
+							}else {
+							if(imaPristup(t, username)) {
+							listanje(t);
+							clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+							String naziv = clientInput.readLine();
+							String putanja = new File("").getAbsolutePath();
+							putanja = putanja.concat("\\korisnici\\").concat(t);
+//							File folder = new File(putanja);
+//							File[] listaFoldera = folder.listFiles();
+							File file = searchFile(new File(putanja), naziv);
+							if(file.exists())
+							// File file= vratiFajl(korisnik, naziv);
+							otvoriFajl(file);
+							else
+								clientOutput.println("Uneti fajl ne postoji");
+
+							}
+							else {
+								clientOutput.println("Nemate pristup!");
+							} 
+							
+							}
+						} else if(opcija2==7) {
+							int nekaopcija=0;
+							do {
+							nekaopcija = meniUpravljanjaDatotekama();
+							if(nekaopcija==1) {
+								String nesto=new File("").getAbsolutePath();
+								clientOutput.println(nesto);
+								clientOutput.println("Prosledite putanju gde zelite da kreirate nov fajl:");
+								String putanja = clientInput.readLine();
+								clientOutput.println("Unesite ime novog fajla:");
+								String naziv = clientInput.readLine();
+								napraviDirektorijumNaOdredjenomMestu(putanja,naziv);
+							}
+							else if(nekaopcija==2) {
+								clientOutput.println("Prosledite putanju foldera ciji naziv zelite da promenite:");
+								String putanja = clientInput.readLine();
+								clientOutput.println("Novo ime:");
+								String naziv = clientInput.readLine();
+								izmeniIme(putanja,naziv);
+							}
+							else if(nekaopcija==3) {
+								clientOutput.println("Unesi naziv fajla koji zelis da premestis: ");
+								String naziv = clientInput.readLine();
+								String putanja = new File("").getAbsolutePath();
+								putanja = putanja.concat("\\korisnici\\").concat(username);
+//								File folder = new File(putanja);
+//								File[] listaFoldera = folder.listFiles();
+								File file = searchFile(new File(putanja), naziv);
+								clientOutput.println("Unesite naziv fajla gde zelis da se prebaci: ");
+								String nazivnovogfoldera = clientInput.readLine();
+								File novFolder = vratiFolder(username, nazivnovogfoldera);
+								String novaputanja = novFolder.getAbsolutePath();
+//								String novaputanja = new File("").getAbsolutePath().concat("\\korisnici\\liked\\a");
+								prebaci(file, novaputanja);
+								if(file.delete())clientOutput.println("Resio fajl");
+								else clientOutput.println("Nisam resio fajl");
+							}
+							else if(nekaopcija==4) {
+								clientOutput.println(new File("").getAbsolutePath());
+								clientOutput.println("Prosledite putanju foldera ciji naziv zelite da promenite:");
+								String putanja = clientInput.readLine();
+								
+								File f = new File(putanja);
+								
+								if(f.list().length==0) {
+									f.delete();
+								}else 
+								clientOutput.println("Uneti direktorijum nije prazan!");
+							}
+							
+							}while(nekaopcija!=0);
+						}
+						
+						else if(opcija2==0) {
+							clientOutput.println("Dovidjenja!");
+						}
+					} while (opcija2 != 0);
+				}else {
 					
-				} while (opcija2 != 0);
+				}
+
 			}
 				else if (opcijaint == 3) {
 					clientOutput.println("Unesi link: ");
@@ -701,8 +881,8 @@ public class ClientHandler extends Thread {
 					String naziv = clientInput.readLine();
 					String putanja = new File("").getAbsolutePath();
 					putanja = putanja.concat("\\korisnici\\").concat(user);
-					File folder = new File(putanja);
-					File[] listaFoldera = folder.listFiles();
+//					File folder = new File(putanja);
+//					File[] listaFoldera = folder.listFiles();
 					File file = searchFile(new File(putanja), naziv);
 
 					// File file= vratiFajl(korisnik, naziv);
@@ -729,6 +909,12 @@ public class ClientHandler extends Thread {
 			System.out.println("Resi ovaj exception nekad");
 		}
 	}
+
+	
+
+	
+
+
 
 	
 
