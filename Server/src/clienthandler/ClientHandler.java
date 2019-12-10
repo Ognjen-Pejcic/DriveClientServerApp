@@ -86,11 +86,11 @@ public class ClientHandler extends Thread {
 				try {
 					clientOutput
 							.println("Odaberite: \n1. Prikaz liste datotkea\n2. Otvaranje datoteke\n3. Upload daoteke"
-									+ "\n4. Dodolite pristup korisniku\n5. Generisanje link za deljenje\n6. Pregled podeljenih direktorijuma\n7. Upravljanje folderima\n0. Logout");
+									+ "\n4. Dodolite pristup korisniku\n5. Generisanje link za deljenje\n6. Pregled podeljenih direktorijuma\n7. Upravljanje folderima\n8. Download datoteke\n0. Logout");
 					opcija = clientInput.readLine();
 					opcijaint = Integer.parseInt(opcija);
 					if (opcijaint == 1 || opcijaint == 2 || opcijaint == 0 || opcijaint == 3 || opcijaint == 4
-							|| opcijaint == 5 || opcijaint == 6 || opcijaint == 7) {
+							|| opcijaint == 5 || opcijaint == 6 || opcijaint == 7 || opcijaint==8) {
 						validan = true;
 					} else
 						clientOutput.println("Pogresan unos, taj broj ne postoji kao opcija");
@@ -116,11 +116,11 @@ public class ClientHandler extends Thread {
 				try {
 					clientOutput
 							.println("Odaberite: \n1. Prikaz liste datotkea\n2. Otvaranje datoteke\n3. Upload daoteke"
-									+ "\n4. Dodolite pristup korisniku\n5. Generisanje link za deljenje\n6. Pregled podeljenih direktorijuma\n0. Logout");
+									+ "\n4. Dodolite pristup korisniku\n5. Generisanje link za deljenje\n6. Pregled podeljenih direktorijuma\n7. Download datoteke\n0. Logout");
 					opcija = clientInput.readLine();
 					opcijaint = Integer.parseInt(opcija);
 					if (opcijaint == 1 || opcijaint == 2 || opcijaint == 0 || opcijaint == 3 || opcijaint == 4
-							|| opcijaint == 5 || opcijaint == 6) {
+							|| opcijaint == 5 || opcijaint == 6 || opcijaint==7) {
 						validan = true;
 					} else
 						clientOutput.println("Pogresan unos, taj broj ne postoji kao opcija");
@@ -427,6 +427,24 @@ public class ClientHandler extends Thread {
 		return null;
 	}
 
+	public File searchFolder(File file, String search) {
+		if (file.isDirectory()) {
+			if(file.getName().equals(search)) {
+				return file;
+			}
+			File[] arr = file.listFiles();
+			for (File f : arr) {
+				File found = searchFolder(f, search);
+				if (found != null)
+					return found;
+			}
+		} else {
+//			if (file.getName().equals(search)) {
+//				return file;
+//			}
+		}
+		return null;
+	}
 	public void listanjeDirektorijuma(String username) {
 		try {
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
@@ -522,6 +540,32 @@ public class ClientHandler extends Thread {
 		String putanja = new File("").getAbsolutePath();
 		putanja = putanja.concat("\\korisnici\\" + username + "\\" + s);
 		File novifajl = new File(putanja);
+		FileOutputStream fos = new FileOutputStream(novifajl);
+		fos.write(b, 0, b.length);
+		fis.close();
+		fos.close();
+	}
+
+	public void download(File file) throws IOException {
+
+		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+//		clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
+		FileInputStream fis = new FileInputStream(file);
+//		otvoriFajl(file);
+		byte b[] = new byte[(int) file.length()];
+		fis.read(b, 0, b.length);
+		String naziv= file.getName();
+		String putanja = new File("").getAbsolutePath();
+		String[] rastavljenaPutanja = putanja.split("\\\\");
+		String novaPutanja="";
+		for (int i=0;i<rastavljenaPutanja.length-1;i++) {
+			novaPutanja=novaPutanja.concat(rastavljenaPutanja[i]+"\\");
+		}
+		novaPutanja=novaPutanja.concat("Client\\"+naziv);
+		File novifajl =  new File(novaPutanja);
+		
+//		putanja = putanja.concat("\\korisnici\\" + username + "\\" + s);
+//		File novifajl = new File(new File("").getAbsolutePath().);
 		FileOutputStream fos = new FileOutputStream(novifajl);
 		fos.write(b, 0, b.length);
 		fis.close();
@@ -726,11 +770,11 @@ public class ClientHandler extends Thread {
 	}
 	private void izmeniIme(String putanja, String naziv) {
 		File folder =new File(putanja);
-		String[] rastavljenaPutanja = putanja.split("\\\\");
-		String novaPutanja="";
-		for (int i=0;i<rastavljenaPutanja.length-1;i++) {
-			novaPutanja=novaPutanja.concat(rastavljenaPutanja[i]+"\\");
-		}
+//		String[] rastavljenaPutanja = putanja.split("\\\\");
+//		String novaPutanja="";
+//		for (int i=0;i<rastavljenaPutanja.length-1;i++) {
+//			novaPutanja=novaPutanja.concat(rastavljenaPutanja[i]+"\\");
+//		}
 //		novaPutanja=novaPutanja.concat(naziv);
 //		File noviFolder =  new File(putanja.concat(novaPutanja));
 //		folder.renameTo(noviFolder);
@@ -823,7 +867,15 @@ public class ClientHandler extends Thread {
 							} 
 							
 							}
-						} else if(opcija2==7) {
+						} else if(opcija2==8){
+							clientOutput.println("Unesite fajl za download");
+							String tekst =  clientInput.readLine();
+//							String putanja = new File("").getAbsolutePath().concat("\\"+username);
+						
+//							File fff= new File(putanja);
+							File f= searchFile(new File(new File("").getAbsolutePath().concat("\\korisnici\\"+username)) , tekst);
+							download(f);
+						}else if(opcija2==7) {
 							int nekaopcija=0;
 							do {
 							nekaopcija = meniUpravljanjaDatotekama();
@@ -851,9 +903,9 @@ public class ClientHandler extends Thread {
 //								File folder = new File(putanja);
 //								File[] listaFoldera = folder.listFiles();
 								File file = searchFile(new File(putanja), naziv);
-								clientOutput.println("Unesite naziv fajla gde zelis da se prebaci: ");
+								clientOutput.println("Unesite naziv foldera gde zelis da se prebaci: ");
 								String nazivnovogfoldera = clientInput.readLine();
-								File novFolder = vratiFolder(username, nazivnovogfoldera);
+								File novFolder = searchFolder(new File(putanja), nazivnovogfoldera);
 								String novaputanja = novFolder.getAbsolutePath();
 //								String novaputanja = new File("").getAbsolutePath().concat("\\korisnici\\liked\\a");
 								prebaci(file, novaputanja);
