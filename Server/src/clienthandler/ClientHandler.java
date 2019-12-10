@@ -103,6 +103,36 @@ public class ClientHandler extends Thread {
 			return opcijaint;
 		}
 	}
+	public int meniNePremiumKorisnika(String username) {
+		int opcijaint = 0;
+		try {
+			clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
+			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
+//			clientOutput.println("Dobrodosli " + username);
+			boolean validan = false;
+
+			// login meni
+			do {
+				try {
+					clientOutput
+							.println("Odaberite: \n1. Prikaz liste datotkea\n2. Otvaranje datoteke\n3. Upload daoteke"
+									+ "\n4. Dodolite pristup korisniku\n5. Generisanje link za deljenje\n6. Pregled podeljenih direktorijuma\n0. Logout");
+					opcija = clientInput.readLine();
+					opcijaint = Integer.parseInt(opcija);
+					if (opcijaint == 1 || opcijaint == 2 || opcijaint == 0 || opcijaint == 3 || opcijaint == 4
+							|| opcijaint == 5 || opcijaint == 6) {
+						validan = true;
+					} else
+						clientOutput.println("Pogresan unos, taj broj ne postoji kao opcija");
+				} catch (NumberFormatException e) {
+					System.out.println("Pogresan unos, unesite broj!");
+				}
+			} while (validan != true);
+			return opcijaint;
+		} catch (IOException e) {
+			return opcijaint;
+		}
+	}
 
 	public String login() {
 		try {
@@ -136,18 +166,6 @@ public class ClientHandler extends Thread {
 					}
 					if (validan == true)
 						break;
-//					else {
-//						clientOutput.println("Uneti username ne postoji!");
-//					}
-//					if(a%3==1 && red.equals(username)) {
-//						b=1;
-//						password=citanjeIzFajla.readLine();
-//						do {
-//							clientOutput.println("Unesi password: ");
-//							String passwordProvera=clientInput.readLine();
-//							if(password.equals(passwordProvera)) {
-//								validan=true;
-//							}
 				}
 					if(validan==false)
 					clientOutput.println("Uneti username ne postoji!");
@@ -723,10 +741,6 @@ public class ClientHandler extends Thread {
 	public void run() {
 
 		try {
-			// PrintWriter upisUfajl = new PrintWriter(new
-			// FileWriter("korisnici.txt",true));
-			// FileReader fr= new FileReader("korisnici.txt");
-			// BufferedReader citanjeIzFajla = new BufferedReader(fr);
 			clientInput = new BufferedReader(new InputStreamReader(socketZaKomunikaciju.getInputStream()));
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
 
@@ -848,7 +862,7 @@ public class ClientHandler extends Thread {
 							}
 							else if(nekaopcija==4) {
 								clientOutput.println(new File("").getAbsolutePath());
-								clientOutput.println("Prosledite putanju foldera ciji naziv zelite da promenite:");
+								clientOutput.println("Prosledite putanju foldera koji zelite da izbrisete:");
 								String putanja = clientInput.readLine();
 								
 								File f = new File(putanja);
@@ -867,9 +881,85 @@ public class ClientHandler extends Thread {
 						}
 					} while (opcija2 != 0);
 				}else {
-					
+					do {
+						
+						 opcija2 = meniNePremiumKorisnika(korisnik);
+						if (opcija2 == 1)
+							listanje(korisnik);
+						else if (opcija2 == 2) {
+							
+							clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+							String naziv = clientInput.readLine();
+							String putanja = new File("").getAbsolutePath();
+							putanja = putanja.concat("\\korisnici\\").concat(username);
+//							File folder = new File(putanja);
+//							File[] listaFoldera = folder.listFiles();
+							File file = searchFile(new File(putanja), naziv);
+							if(file.exists())
+							// File file= vratiFajl(korisnik, naziv);
+							otvoriFajl(file);
+							else
+								clientOutput.println("Uneti fajl ne postoji");
+
+						} else if (opcija2 == 3) {
+							String p = new File("").getAbsolutePath();
+							p=p.concat("\\korisnici\\"+username);
+							File f= new File(p);
+							if(f.list().length<5) {
+							clientOutput.println("Unesite putanju do datoteke: ");
+							String putanja = clientInput.readLine();
+							if(new File(putanja).exists())
+							upload(new File(putanja), username);
+							else 
+								clientOutput.println("Uneli ste pogresnu putanju");
+							}
+							else 
+							{
+								clientOutput.println("Ne mozete da uneste vise od 5 fajlova u direktorijum");
+							}
+						} else if(opcija2==4) {
+							clientOutput.println("Kome zelite da date pristup: ");
+							String user = clientInput.readLine();
+							
+							dajOvlascenjeKorisniku(user);
+						}
+						else if (opcija2 == 5) {
+							generisLinkZaDeljenje(username);
+						
+						} else if(opcija2 ==6) {
+							korisniciCijimDirektorijumimaImaPristup();
+							clientOutput.println("Unesi naziv korisnika kojem zelis da pristupis: ");
+							
+							String t= clientInput.readLine();
+							if(!daLiPostojiKorisnik(t)) {
+								clientOutput.println("Uneti korisnik ne postoji");
+							}else {
+							if(imaPristup(t, username)) {
+							listanje(t);
+							clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+							String naziv = clientInput.readLine();
+							String putanja = new File("").getAbsolutePath();
+							putanja = putanja.concat("\\korisnici\\").concat(t);
+//							File folder = new File(putanja);
+//							File[] listaFoldera = folder.listFiles();
+							File file = searchFile(new File(putanja), naziv);
+							if(file.exists())
+							// File file= vratiFajl(korisnik, naziv);
+							otvoriFajl(file);
+							else
+								clientOutput.println("Uneti fajl ne postoji");
+
+							}
+							else {
+								clientOutput.println("Nemate pristup!");
+							} 
+							
+							}
 				}
 
+						
+					}while (opcija2 != 0);
+				}
 			}
 				else if (opcijaint == 3) {
 					clientOutput.println("Unesi link: ");
@@ -887,10 +977,7 @@ public class ClientHandler extends Thread {
 
 					// File file= vratiFajl(korisnik, naziv);
 					otvoriFajl(file);
-				}
-				
-
-			
+				}	
 			clientOutput.println("Upisi ***quit za izlaz");
 			String message;
 			while (true) {
@@ -909,13 +996,5 @@ public class ClientHandler extends Thread {
 			System.out.println("Resi ovaj exception nekad");
 		}
 	}
-
-	
-
-	
-
-
-
-	
 
 }
