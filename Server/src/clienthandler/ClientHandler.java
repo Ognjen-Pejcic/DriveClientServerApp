@@ -852,18 +852,54 @@ public class ClientHandler extends Thread {
 							} else {
 								if (imaPristup(t, username)) {
 									listanje(t);
-									clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
-									String naziv = clientInput.readLine();
-									String putanja = new File("").getAbsolutePath();
-									putanja = putanja.concat("\\korisnici\\").concat(t);
+									
+									int izbor =0; 
+									do {
+										clientOutput.println("Unesite:\n1 za pregled datoteke\n2 za download\n0 za povratak");
+										izbor= Integer.parseInt(clientInput.readLine());
+										if(izbor==0 || izbor==1 ||izbor==2) {
+										if(izbor==0) {
+											break;
+										}
+										if(izbor==1) {
+											clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+											String naziv = clientInput.readLine();
+											String putanja = new File("").getAbsolutePath();
+											putanja = putanja.concat("\\korisnici\\").concat(t);
+											File file = searchFile(new File(putanja), naziv);
+											if (file.exists())
+												// File file= vratiFajl(korisnik, naziv);
+												otvoriFajl(file);
+											else
+												clientOutput.println("Uneti fajl ne postoji");
+
+										} 
+										if(izbor==2) {
+											clientOutput.println("Unesite fajl za download");
+											String tekst = clientInput.readLine();
+											File f = searchFile(
+													new File(new File("").getAbsolutePath().concat("\\korisnici\\" + t)), tekst);
+											download(f);
+										}
+									
+										}else
+										{
+											clientOutput.println("Pogresan unos");
+										}
+							
+									}while(true);
+//									clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+//									String naziv = clientInput.readLine();
+//									String putanja = new File("").getAbsolutePath();
+//									putanja = putanja.concat("\\korisnici\\").concat(t);
 //							File folder = new File(putanja);
 //							File[] listaFoldera = folder.listFiles();
-									File file = searchFile(new File(putanja), naziv);
-									if (file.exists())
-										// File file= vratiFajl(korisnik, naziv);
-										otvoriFajl(file);
-									else
-										clientOutput.println("Uneti fajl ne postoji");
+//									File file = searchFile(new File(putanja), naziv);
+//									if (file.exists())
+//										// File file= vratiFajl(korisnik, naziv);
+//										otvoriFajl(file);
+//									else
+//										clientOutput.println("Uneti fajl ne postoji");
 
 								} else {
 									clientOutput.println("Nemate pristup!");
@@ -988,18 +1024,54 @@ public class ClientHandler extends Thread {
 							} else {
 								if (imaPristup(t, username)) {
 									listanje(t);
-									clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
-									String naziv = clientInput.readLine();
-									String putanja = new File("").getAbsolutePath();
-									putanja = putanja.concat("\\korisnici\\").concat(t);
+									
+									int izbor =0; 
+									do {
+										clientOutput.println("Unesite:\n1 za pregled datoteke\n2 za download\n0 za povratak");
+										izbor= Integer.parseInt(clientInput.readLine());
+										if(izbor==0 || izbor==1 ||izbor==2) {
+										if(izbor==0) {
+											break;
+										}
+										if(izbor==1) {
+											clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+											String naziv = clientInput.readLine();
+											String putanja = new File("").getAbsolutePath();
+											putanja = putanja.concat("\\korisnici\\").concat(t);
+											File file = searchFile(new File(putanja), naziv);
+											if (file.exists())
+												// File file= vratiFajl(korisnik, naziv);
+												otvoriFajl(file);
+											else
+												clientOutput.println("Uneti fajl ne postoji");
+
+										} 
+										if(izbor==2) {
+											clientOutput.println("Unesite fajl za download");
+											String tekst = clientInput.readLine();
+											File f = searchFile(
+													new File(new File("").getAbsolutePath().concat("\\korisnici\\" + t)), tekst);
+											download(f);
+										}
+									
+										}else
+										{
+											clientOutput.println("Pogresan unos");
+										}
+							
+									}while(true);
+//									clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+//									String naziv = clientInput.readLine();
+//									String putanja = new File("").getAbsolutePath();
+//									putanja = putanja.concat("\\korisnici\\").concat(t);
 //							File folder = new File(putanja);
 //							File[] listaFoldera = folder.listFiles();
-									File file = searchFile(new File(putanja), naziv);
-									if (file.exists())
-										// File file= vratiFajl(korisnik, naziv);
-										otvoriFajl(file);
-									else
-										clientOutput.println("Uneti fajl ne postoji");
+//									File file = searchFile(new File(putanja), naziv);
+//									if (file.exists())
+//										// File file= vratiFajl(korisnik, naziv);
+//										otvoriFajl(file);
+//									else
+//										clientOutput.println("Uneti fajl ne postoji");
 
 								} else {
 									clientOutput.println("Nemate pristup!");
