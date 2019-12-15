@@ -17,6 +17,7 @@ import java.util.LinkedList;
 
 import korisnici.Korisnik;
 import main.ServerMain;
+import enkripcijaDekripcija.AES;
 
 public class ClientHandler extends Thread {
 
@@ -30,7 +31,7 @@ public class ClientHandler extends Thread {
 	String opcija;
 	String premium;
 	LinkedList<Korisnik> korisnici = new LinkedList<>();
-
+	final String enkripcionaSifra = "AA42609D0D34D400FC671123C63715CC";
 	// konstruktor
 	public ClientHandler(Socket socketZaKomunikaciju) {
 		this.socketZaKomunikaciju = socketZaKomunikaciju;
@@ -155,8 +156,9 @@ public class ClientHandler extends Thread {
 						do {
 							clientOutput.println("Unesi password: ");
 							String passwordProvera = clientInput.readLine();
-							if (passwordProvera.equals(tekst[1])) {
-								validan = true;
+						//	if ((AES.decrypt(tekst[1], enkripcionaSifra)).equals(passwordProvera)) {
+								if(tekst[1].equals(passwordProvera)) {
+							validan = true;
 								premium = tekst[2];
 							} else {
 								clientOutput.println("Pogresan password");
@@ -176,9 +178,11 @@ public class ClientHandler extends Thread {
 
 			return username;
 		} catch (IOException e) {
-			return null;
+			
+		} catch (Exception e) {
+			clientOutput.println("Greska prilikom dekpricije");
 		}
-
+		return null;
 	}
 
 	public void registracija() {
@@ -219,6 +223,7 @@ public class ClientHandler extends Thread {
 			// upisUfajl.flush();
 			clientOutput.println("Unesi zeljeni password: ");
 			password = clientInput.readLine();
+			//password = AES.encrypt(password, enkripcionaSifra);
 //			upisUfajl.println(password);
 			validan = false;
 
@@ -238,6 +243,7 @@ public class ClientHandler extends Thread {
 //			premium = clientInput.readLine();
 			napraviDirektorijum(username);
 			String link = new File("").getAbsolutePath().concat("\\korisnici\\" + username);
+			link=AES.encrypt(link, enkripcionaSifra);
 			String tekst = username + "_" + password + "_" + premium + "_" + link + "_";
 			upisUfajl.println(tekst);
 			upisUfajl.close();
@@ -246,6 +252,8 @@ public class ClientHandler extends Thread {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (Exception e) {
+			clientOutput.println("Greska prilikom enkripcije");
 		}
 
 	}
@@ -403,6 +411,12 @@ public class ClientHandler extends Thread {
 		String putanja = new File("").getAbsolutePath();
 		putanja = putanja.concat("\\korisnici\\").concat(username);
 		File folder = new File(putanja);
+		File[] listaFoldera = folder.listFiles();
+		recursivePrint(listaFoldera, 0, 0);
+	}
+	public void listanjePrekoLinka(String link) throws IOException {
+		
+		File folder = new File(link);
 		File[] listaFoldera = folder.listFiles();
 		recursivePrint(listaFoldera, 0, 0);
 	}
@@ -582,11 +596,11 @@ public class ClientHandler extends Thread {
 		return korisnik;
 	}
 
-	private String pristupTudjemPrekoLinka(String link) throws IOException {
+	private String pristupTudjemPrekoLinka(String link) throws Exception {
 		LinkedList<String> korisnici = generisiKorisnike();
 		for (String korisnik : korisnici) {
 			String[] delovi = korisnik.split("_");
-			if (link.equals(delovi[3])) {
+			if (AES.decrypt(link, enkripcionaSifra).equals(delovi[3])) {
 				return delovi[0];
 			}
 		}
@@ -1094,19 +1108,45 @@ public class ClientHandler extends Thread {
 			} else if (opcijaint == 3) {
 				clientOutput.println("Unesi link: ");
 				String link = clientInput.readLine();
-				String user = pristupTudjemPrekoLinka(link);
-				listanje(user);
-				clientOutput.println("Izaberi fajl za prikaz: ");
-//					String nazivFajla = clientInput.readLine();
-				String naziv = clientInput.readLine();
-				String putanja = new File("").getAbsolutePath();
-				putanja = putanja.concat("\\korisnici\\").concat(user);
-//					File folder = new File(putanja);
-//					File[] listaFoldera = folder.listFiles();
-				File file = searchFile(new File(putanja), naziv);
+				link = AES.decrypt(link, enkripcionaSifra);
+				clientOutput.println(link);
+				String[] a=link.split("\\\\");
+				String user=a[a.length-1];
+				listanjePrekoLinka(link);
+				int izbor =0; 
+				do {
+					clientOutput.println("Unesite:\n1 za pregled datoteke\n2 za download\n0 za povratak");
+					izbor= Integer.parseInt(clientInput.readLine());
+					if(izbor==0 || izbor==1 ||izbor==2) {
+					if(izbor==0) {
+						break;
+					}
+					if(izbor==1) {
+						clientOutput.println("Unesi naziv fajla koji zelis da se prikaze: ");
+						String naziv = clientInput.readLine();
+						String putanja = new File("").getAbsolutePath();
+						putanja = putanja.concat("\\korisnici\\").concat(user);
+						File file = searchFile(new File(putanja), naziv);
+						if (file.exists())
+							// File file= vratiFajl(korisnik, naziv);
+							otvoriFajl(file);
+						else
+							clientOutput.println("Uneti fajl ne postoji");
 
-				// File file= vratiFajl(korisnik, naziv);
-				otvoriFajl(file);
+					} 
+					if(izbor==2) {
+						clientOutput.println("Unesite fajl za download");
+						String tekst = clientInput.readLine();
+						File f = searchFile(
+								new File(new File("").getAbsolutePath().concat("\\korisnici\\" + user)), tekst);
+						download(f);
+					}
+				
+					}else
+					{
+						clientOutput.println("Pogresan unos");
+					}
+			}while(true);
 			}
 			clientOutput.println("Upisi ***quit za izlaz");
 			String message;
@@ -1117,6 +1157,7 @@ public class ClientHandler extends Thread {
 					break;
 				}
 			}
+			
 			clientOutput.println(">>> Dovidjenja ");
 			ServerMain.onlineKorisnici.remove(this);
 			socketZaKomunikaciju.close();
@@ -1124,6 +1165,9 @@ public class ClientHandler extends Thread {
 			ServerMain.onlineKorisnici.remove(this);
 		} catch (NullPointerException e) {
 			System.out.println("Resi ovaj exception nekad");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
