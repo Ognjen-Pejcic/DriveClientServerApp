@@ -14,9 +14,10 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Base64;
 import java.util.LinkedList;
+import main.ServerMain;
 
 import korisnici.Korisnik;
-import main.ServerMain;
+//import main.ServerMain;
 import enkripcijaDekripcija.AES;
 
 public class ClientHandler extends Thread {
@@ -45,7 +46,18 @@ public class ClientHandler extends Thread {
 			direktorijum.mkdir();
 		}
 	}
-
+	public boolean daLijeLogovan(LinkedList<ClientHandler> l, String ime) {
+		l=ServerMain.onlineKorisnici;
+//		for (ClientHandler clientHandler : l) {
+//			clientOutput.println(clientHandler.username);
+//		}
+		for (ClientHandler clientHandler : l) {
+			if(clientHandler.username!=null && clientHandler.username.equals(ime)) {
+				return true;
+			}
+		}
+		return false;
+	}
 	public int loginMeni() {
 		int opcijaint = 0;
 		try {
@@ -142,18 +154,29 @@ public class ClientHandler extends Thread {
 			clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
 
 //			int a = 1;
-//			int b = 0;
+			int b = 0;
 			boolean validan = false;
 			do {
 				FileReader fr = new FileReader("korisnici.txt");
 				BufferedReader citanjeIzFajla = new BufferedReader(fr);
 				clientOutput.println("Unesi username: ");
-				username = clientInput.readLine();
+				String s = clientInput.readLine();
 				String red;
 				while ((red = citanjeIzFajla.readLine()) != null) {
 					String[] tekst = red.split("_");
-					if (tekst[0].equals(username)) {
+					if (tekst[0].equals(s)) {
+						if(daLijeLogovan(ServerMain.onlineKorisnici, tekst[0])) {
+							b=1;
+							clientOutput.println("Vec ste ulogovani");
+						}
+//						if(b==1) {
+//							clientOutput.println("Vec ste ulogovani");
+//							citanjeIzFajla.close();
+//							return null;
+//						}
+						else {
 						do {
+							username=s;
 							clientOutput.println("Unesi password: ");
 							String passwordProvera = clientInput.readLine();
 						//	if ((AES.decrypt(tekst[1], enkripcionaSifra)).equals(passwordProvera)) {
@@ -164,16 +187,20 @@ public class ClientHandler extends Thread {
 								clientOutput.println("Pogresan password");
 							}
 						} while (validan != true);
+						}
 					}
 					if (validan == true)
 						break;
 				}
-				if (validan == false)
+				
+				if (b!=1 &&validan == false) {
 					clientOutput.println("Uneti username ne postoji!");
+					}
 				citanjeIzFajla.close();
 			} while (validan != true);
 
-			if (validan == false)
+			
+			if ( validan == false)
 				clientOutput.println("Username ne postoji!");
 
 			return username;
@@ -596,16 +623,16 @@ public class ClientHandler extends Thread {
 		return korisnik;
 	}
 
-	private String pristupTudjemPrekoLinka(String link) throws Exception {
-		LinkedList<String> korisnici = generisiKorisnike();
-		for (String korisnik : korisnici) {
-			String[] delovi = korisnik.split("_");
-			if (AES.decrypt(link, enkripcionaSifra).equals(delovi[3])) {
-				return delovi[0];
-			}
-		}
-		return null;
-	}
+//	private String pristupTudjemPrekoLinka(String link) throws Exception {
+//		LinkedList<String> korisnici = generisiKorisnike();
+//		for (String korisnik : korisnici) {
+//			String[] delovi = korisnik.split("_");
+//			if (AES.decrypt(link, enkripcionaSifra).equals(delovi[3])) {
+//				return delovi[0];
+//			}
+//		}
+//		return null;
+//	}
 
 	private void generisLinkZaDeljenje(String user) throws IOException {
 		clientOutput = new PrintStream(socketZaKomunikaciju.getOutputStream());
@@ -818,6 +845,9 @@ public class ClientHandler extends Thread {
 			} else if (opcijaint == 2) {
 
 				String korisnik = login();
+				if(korisnik==null) {
+					return;
+				}
 				clientOutput.println("Dobrodosli " + username);
 				int opcija2;
 				if (premium.equals("da")) {
